@@ -15,6 +15,11 @@ import HeygenProcessor
 load_dotenv()
 TOKEN = os.environ["BOT_TOKEN"]
 API_HEYGEN = os.environ["API_HEYGEN"]
+DEFAULT_VOICE_ID = os.environ["HEYGEN_VOICE_ID"]
+TIMEOUT = httpx.Timeout(30.0, read=60.0)
+HEADERS = {"x-api-key": API_HEYGEN}
+API_URL = "https://api.heygen.com"
+UPLOAD_ULR = "https://upload.heygen.com"
 print(TOKEN, API_HEYGEN)
 
 bot = Bot(token=TOKEN)
@@ -115,7 +120,7 @@ async def process_caption(message: Message, state: FSMContext):
             await message.answer("Ошибка: не настроен голосовой ID")
             return
             
-        video_id = processor.create_video(client, talking_photo_id, caption, voice_id)
+        video_id = processor.create_video(client, talking_photo_id, caption, DEFAULT_VOICE_ID)
         
         # 3. Ждем и скачиваем результат
         video_path = f"result_{photo_id}.mp4"

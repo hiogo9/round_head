@@ -10,9 +10,10 @@ from typing import Iterable, Optional
 import httpx
 from dotenv import load_dotenv
 
+load_dotenv()
 
-API_HEYGEN = os.environ.get("API_HEYGEN") or ""
-DEFAULT_VOICE_ID = os.environ.get("HEYGEN_VOICE_ID", "")
+API_HEYGEN = os.environ["API_HEYGEN"]
+DEFAULT_VOICE_ID = os.environ["HEYGEN_VOICE_ID"]
 TIMEOUT = httpx.Timeout(30.0, read=60.0)
 HEADERS = {"x-api-key": API_HEYGEN}
 API_URL = "https://api.heygen.com"
@@ -72,7 +73,7 @@ class HeygenProcessor:
         return tp_id
 
     def create_video(
-        self, client: httpx.Client, talking_photo_id: str, text: str, voice_id: str
+        self, client: httpx.Client, talking_photo_id: str, text: str|None, voice_id: str
     ) -> str:
         print(talking_photo_id)
         print(text)
