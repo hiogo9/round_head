@@ -9,7 +9,7 @@ from aiogram.types import Message
 load_dotenv()
 TOKEN = os.environ["BOT_TOKEN"]
 
-
+print(TOKEN)
 
 dp = Dispatcher()
 
