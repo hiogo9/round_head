@@ -13,7 +13,7 @@ print(TOKEN, API_HEYGEN)
 
 
 button = KeyboardButton(text="Example button")
-keyboard = ReplyKeyboardMarkup(resize_keyboard=True).add(button)
+
 
 
 dp = Dispatcher()
@@ -23,11 +23,6 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def command_start_handler(message: Message) -> None:
     await message.answer("Prive Andrey ti ochen ymny chel")
-
-
-@dp.message_handler(commands=["start"])
-async def send_welcome(message: types.Message):
-    await message.answer("Hi! Here's a keyboard:", reply_markup=keyboard)
 
 
 # Run the bot
