@@ -18,7 +18,7 @@ print(TOKEN, API_HEYGEN)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-TEMP_VIDEO_PATH = 'simple.mp4'
+TEMP_VIDEO_PATH = "simple.mp4"
 
 
 # Состояния (FSM - Finite State Machine)
@@ -36,23 +36,21 @@ async def start(message: Message, state: FSMContext) -> None:
     )
     await state.set_state(Form.waiting_for_photo)
 
+
 # Command handler
 @dp.message(Command("video"))
 async def video(message: Message, state: FSMContext) -> None:
-    await message.answer(
-        "Пытаюсь отправить видео"
-    )
-    with open(TEMP_VIDEO_PATH, 'rb') as video_file:
-            input_file = BufferedInputFile(
-                file=video_file.read(),
-                filename="circular_video.webm"
-            )
-            await bot.send_video(
-                chat_id=message.chat.id,
-                video=input_file,
-                supports_streaming=True
-            )
+    await message.answer("Пытаюсь отправить видео")
+    with open(TEMP_VIDEO_PATH, "rb") as video_file:
+        input_file = BufferedInputFile(
+            file=video_file.read(), filename="circular_video.mp4"
+        )
+        await bot.send_video_note(
+            chat_id=message.chat.id,
+            video_note=input_file
+        )
     # video_temporary = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=)
+
 
 # Обработка фото
 @dp.message(Form.waiting_for_photo, F.content_type == ContentType.PHOTO)
@@ -80,7 +78,6 @@ async def process_caption(message: Message, state: FSMContext):
     # Отправляем фото с подписью
     await bot.send_photo(chat_id=message.chat.id, photo=photo_id, caption=caption)
     await state.clear()
-
 
 
 if __name__ == "__main__":
