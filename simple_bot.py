@@ -161,7 +161,7 @@ async def process_caption(message: Message, state: FSMContext):
         await message.answer(f"Неизвестная ошибка: {str(e)}")
     finally:
         # Удаляем временные файлы
-        client.close()
+        
         if os.path.exists(photo_path):
             os.remove(photo_path)
         if video_path and os.path.exists(video_path):
@@ -177,6 +177,7 @@ async def process_caption(message: Message, state: FSMContext):
         r.raise_for_status()
         j = r.json() or {}
         print(j)
+        client.close()
 
     await state.clear()
 
