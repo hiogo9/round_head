@@ -56,6 +56,7 @@ class HeygenProcessor:
             except Exception:
                 pass
             raise HeygenError(f"Upload failed: HTTP {r.status_code}: {msg}")
+        
         js = (
             r.json()
             if r.headers.get("content-type", "").startswith("application/json")
@@ -71,6 +72,7 @@ class HeygenProcessor:
         if not tp_id:
             raise HeygenError(f"No talking_photo_id in response: {js}")
         print('talking_photo_id=',tp_id)
+        print('talking_photo_all_json = ',r.json())
         return tp_id
 
     def create_video(
@@ -94,7 +96,7 @@ class HeygenProcessor:
                     "voice": {
                         "type": "text",
                         "voice_id": voice_id,
-                        "input_text": text[:2000],
+                        "input_text": text[:1000],
                         "speed": 1,
                         "locale": "ru-RU",
                         "emotion": "Excited",
@@ -142,7 +144,7 @@ class HeygenProcessor:
         client: httpx.Client,
         video_id: str,
         out_path: Path,
-        delays: Iterable[float] = (3, 5, 8, 13, 21, 34, 55),
+        delays: Iterable[float] = (3, 5, 8, 8, 8, 13, 21, 34, 55),
     ) -> None:
         url: Optional[str] = None
         for d in delays:
