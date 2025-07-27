@@ -19,27 +19,9 @@ class VideoProcessor:
             "ffmpeg",
             "-i",
             file_path,
-            "-vf",
-            (
-                # 1. Делаем квадрат
-                "scale=w='min(iw,ih)':h='min(iw,ih)',"
-                "crop=w=ih:h=ih,"
-                "scale=512:512,"
-                # 2. Создаем круглую маску
-                "format=rgba,"
-                "split[vid][alpha];"
-                "[alpha]geq=lum=0:cb=0:cr=0,"
-                "geq=a='if(gt(sqrt((X-256)^2+(Y-256)^2),256,255)',"
-                "curves=psfile='color_curves.acv'[mask];"
-                # 3. Накладываем маску
-                "[vid][mask]alphamerge"
-            ),
-            "-c:v",
-            "libvpx-vp9",  # Кодек с поддержкой прозрачности
-            "-pix_fmt",
-            "yuva420p",  # Формат с альфа-каналом
-            "-auto-alt-ref",
-            "0",
+           '-vf', "scale=512:512, drawbox=color=white@1:t=fill[bg]; [bg]overlay=(W-w)/2:(H-h)/2",
+    '-c:v', 'libx264',
+            "-y",  # Перезаписать, если файл существует
             output_path,
         ]
 
