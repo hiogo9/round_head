@@ -56,32 +56,47 @@ async def ffmpeg_square_640(input_path: Path, output_path: Path) -> None:
 
 
 async def pick_ru_voice(client: httpx.AsyncClient) -> Optional[str]:
-    """Вернёт первый доступный voice_id с поддержкой ru (если не задан вручную)."""
+    """Выбирает voice_id с поддержкой ru, используя корректную схему ответов API.
+    /v2/voices/locales → { data: { locales: [...] } }
+    /v2/voices          → { voices: [...] }
+    """
     if DEFAULT_VOICE_ID:
         return DEFAULT_VOICE_ID
-    # 1) список локалей
-    r = await client.get(f"{API_BASE}/v2/voices/locales", headers=HEADERS)
-    r.raise_for_status()
-    locales = r.json()
-    ru_locales = {item.get("locale") for item in locales if "ru" in (item.get("locale") or "").lower()}
-    # 2) список голосов
-    r = await client.get(f"{API_BASE}/v2/voices", headers=HEADERS)
-    r.raise_for_status()
-    voices = r.json()
+
+    # 1) Получаем локали и собираем ru-набор
+    resp = await client.get(f"{API_BASE}/v2/voices/locales", headers=HEADERS)
+    resp.raise_for_status()
+    j = resp.json() or {}
+    locales = (j.get("data") or {}).get("locales") or []
+    ru_locales = {loc.get("locale") for loc in locales
+                  if isinstance(loc, dict) and "ru" in (loc.get("locale") or "").lower()}
+
+    # 2) Получаем список голосов
+    resp = await client.get(f"{API_BASE}/v2/voices", headers=HEADERS)
+    resp.raise_for_status()
+    j = resp.json() or {}
+    voices = j.get("voices") or []
+
+    # 2a) Сначала — голоса с явной поддержкой локалей и пересечением с ru
     for v in voices:
-        # если голос явно поддерживает ru‑локаль
+        if not isinstance(v, dict):
+            continue
         if v.get("support_locale"):
-            locs = {l.get("locale") for l in v.get("locales", [])}
-            if locs & ru_locales:
+            v_locs = {l.get("locale") for l in (v.get("locales") or []) if isinstance(l, dict)}
+            if v_locs & ru_locales:
                 return v.get("voice_id")
-        # или имя/язык содержит ru
+
+    # 2b) Затем — по языку/имени
+    for v in voices:
+        if not isinstance(v, dict):
+            continue
         lang = (v.get("language") or "").lower()
-        if "russian" in lang or "ru" == lang:
+        name = (v.get("name") or "").lower()
+        if "russian" in lang or lang == "ru" or "russian" in name:
             return v.get("voice_id")
-    # фолбэк: вернуть первый voice_id
-    if voices:
-        return voices[0].get("voice_id")
-    return None
+
+    # 2c) Фолбэк — первый доступный
+    return voices[0].get("voice_id") if voices else None
 
 
 async def upload_talking_photo(client: httpx.AsyncClient, content: bytes, mime: str) -> str:
@@ -93,7 +108,7 @@ async def upload_talking_photo(client: httpx.AsyncClient, content: bytes, mime: 
     tp_id = data.get("talking_photo_id") or data.get("id") or ""
     if not tp_id:
         raise RuntimeError("No talking_photo_id in response")
-    return tp_id  # /v1 endpoint, быстрый путь. :contentReference[oaicite:1]{index=1}
+    return tp_id  # /v1 endpoint, быстрый путь. ([docs.heygen.com](https://docs.heygen.com/discuss/676308cbe4fd890041128d27?utm_source=chatgpt.com))
 
 
 async def create_video(client: httpx.AsyncClient, talking_photo_id: str, text: str, voice_id: str) -> HeygenResult:
@@ -114,7 +129,7 @@ async def create_video(client: httpx.AsyncClient, talking_photo_id: str, text: s
             "voice": {
                 "type": "text",
                 "voice_id": voice_id,
-                "input_text": text[:2000],  # некоторые инстансы валидируют на 2000 симв. :contentReference[oaicite:2]{index=2}
+                "input_text": text[:2000],  # некоторые инстансы валидируют на 2000 симв. ([docs.heygen.com](https://docs.heygen.com/discuss/674292a5124fe50018a3b207?utm_source=chatgpt.com))
                 "speed": 1.3,
                 "locale": "ru-RU",
                 "emotion": "Excited"
@@ -134,7 +149,7 @@ async def create_video(client: httpx.AsyncClient, talking_photo_id: str, text: s
 
 
 async def get_video_url(client: httpx.AsyncClient, video_id: str) -> Optional[str]:
-    # URL истекает через 7 дней; при повторном запросе выдаётся новый. :contentReference[oaicite:3]{index=3}
+    # URL истекает через 7 дней; при повторном запросе выдаётся новый. ([docs.heygen.com](https://docs.heygen.com/reference/video-status?utm_source=chatgpt.com), [docs.heygen.com](https://docs.heygen.com/discuss/67361ac3ca7398002a62316c?utm_source=chatgpt.com))
     r = await client.get(f"{API_BASE}/v1/video_status.get", params={"video_id": video_id}, headers=HEADERS)
     r.raise_for_status()
     data = r.json()
@@ -217,7 +232,7 @@ async def on_text(m: Message):
         try:
             res = await create_video(client, tp_id, text, voice_id)
         except Exception as e:
-            # типичные причины: лимиты, модерация, неверный voice_id. :contentReference[oaicite:4]{index=4}
+            # типичные причины: лимиты, модерация, неверный voice_id. ([docs.heygen.com](https://docs.heygen.com/reference/limits?utm_source=chatgpt.com), [docs.heygen.com](https://docs.heygen.com/reference/video-status?utm_source=chatgpt.com))
             return await m.reply(f"Ошибка генерации в HeyGen: {e}")
 
         # ждать готовности (поллинг с backoff; можно заменить на вебхуки)
@@ -249,7 +264,7 @@ async def on_text(m: Message):
             except Exception as e:
                 return await m.reply(f"Ошибка ffmpeg: {e}")
 
-            # отправка как video note (по URL нельзя). :contentReference[oaicite:5]{index=5}
+            # отправка как video note (по URL нельзя). ([hackage.haskell.org](https://hackage.haskell.org/package/telegram-bot-api/docs/Telegram-Bot-API-Methods-SendVideoNote.html?utm_source=chatgpt.com))
             with open(tmp_out, "rb") as f:
                 await bot.send_video_note(chat_id=m.chat.id, video_note=f, length=640)
 
