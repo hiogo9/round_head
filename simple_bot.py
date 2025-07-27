@@ -92,7 +92,6 @@ async def process_caption(message: Message, state: FSMContext):
     data = await state.get_data()
     photo_id = data["photo"]
     caption = message.text
-    
 
     photo_file = await bot.get_file(photo_id)
     if photo_file.file_path is None:
@@ -102,37 +101,49 @@ async def process_caption(message: Message, state: FSMContext):
 
     await bot.download_file(photo_file.file_path, destination=photo_path)
 
-        # Создаем экземпляр процессора и HTTP-клиент
+    # Создаем экземпляр процессора и HTTP-клиент
     processor = HeygenProcessor.HeygenProcessor()
     client = httpx.Client()
 
     video_path = None  # Инициализируем переменную для пути к видео
     try:
         await message.answer("Начинаю обработку видео...")
-        
+
         # 1. Загружаем фото в Heygen
         mime = processor.guess_mime(Path(photo_path))
-        talking_photo_id = processor.upload_talking_photo(client, Path(photo_path), mime)
-        
+        talking_photo_id = processor.upload_talking_photo(
+            client, Path(photo_path), mime
+        )
+
         # 2. Создаем видео (используем голос из .env)
         voice_id = os.environ.get("HEYGEN_VOICE_ID", "")
         if not voice_id:
             await message.answer("Ошибка: не настроен голосовой ID")
             return
-            
-        video_id = processor.create_video(client, talking_photo_id, caption, DEFAULT_VOICE_ID)
-        
+
+        video_id = processor.create_video(
+            client, talking_photo_id, caption, DEFAULT_VOICE_ID
+        )
+
         # 3. Ждем и скачиваем результат
         video_path = f"result_{photo_id}.mp4"
         processor.wait_and_download(client, video_id, Path(video_path))
-        
+
         # Отправляем видео пользователю
-        with open(video_path, "rb") as video_file:
-            video_data = video_file.read()
-        await message.answer_video(
-            video=BufferedInputFile(video_data, filename="result.mp4")
+        # with open(video_path, "rb") as video_file:
+        #     video_data = video_file.read()
+        # await message.answer_video(
+        #     video=BufferedInputFile(video_data, filename="result.mp4")
+        # )
+        new_video_path = await VideoProcessor.VideoProcessor.process_video_to_circle(
+            file_path=TEMP_VIDEO_PATH, output_path="circle_" + TEMP_VIDEO_PATH
         )
-        
+        with open(new_video_path, "rb") as video_file:
+            input_file = BufferedInputFile(
+                file=video_file.read(), filename="circular_video.mp4"
+            )
+            await bot.send_video_note(chat_id=message.chat.id, video_note=input_file)
+
     except HeygenProcessor.HeygenError as e:
         await message.answer(f"Ошибка Heygen: {str(e)}")
     except Exception as e:
@@ -144,7 +155,7 @@ async def process_caption(message: Message, state: FSMContext):
             os.remove(photo_path)
         if video_path and os.path.exists(video_path):
             os.remove(video_path)
-    
+
     await state.clear()
 
 
