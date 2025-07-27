@@ -88,6 +88,7 @@ async def not_photo(message: Message):
 # Обработка текста (подписи)
 @dp.message(Form.waiting_for_caption)
 async def process_caption(message: Message, state: FSMContext):
+    await message.answer("---берем загруженное фото---")
     # Достаем сохраненное фото
     data = await state.get_data()
     photo_id = data["photo"]
@@ -100,6 +101,7 @@ async def process_caption(message: Message, state: FSMContext):
     photo_path = f"temp_photo_{photo_id}.jpg"
 
     await bot.download_file(photo_file.file_path, destination=photo_path)
+    await message.answer("---грузим его на сервис нейронок---")
 
     # Создаем экземпляр процессора и HTTP-клиент
     processor = HeygenProcessor.HeygenProcessor()
@@ -107,13 +109,14 @@ async def process_caption(message: Message, state: FSMContext):
 
     video_path = None  # Инициализируем переменную для пути к видео
     try:
-        await message.answer("Начинаю обработку видео...")
+        await message.answer("---пупупу....---")
 
         # 1. Загружаем фото в Heygen
         mime = processor.guess_mime(Path(photo_path))
         talking_photo_id = processor.upload_talking_photo(
             client, Path(photo_path), mime
         )
+        await message.answer("---нейронка ПОШЛА---")
 
         # 2. Создаем видео (используем голос из .env)
         voice_id = os.environ.get("HEYGEN_VOICE_ID", "")
@@ -124,12 +127,16 @@ async def process_caption(message: Message, state: FSMContext):
         video_id = processor.create_video(
             client, talking_photo_id, caption, DEFAULT_VOICE_ID
         )
+        await message.answer("---генерирует видиво---")
+        
 
         # 3. Ждем и скачиваем результат
 
         video_path = f"result_{photo_id}.mp4"
         print(video_path)
+        await message.answer("---ждем...=(---")
         processor.wait_and_download(client, video_id, Path(video_path))
+        await message.answer("---жмем видосик в кругляху---")
         print('loaded video')
         # Отправляем видео пользователю
         # with open(video_path, "rb") as video_file:
@@ -137,6 +144,7 @@ async def process_caption(message: Message, state: FSMContext):
         # await message.answer_video(
         #     video=BufferedInputFile(video_data, filename="result.mp4")
         # )
+        new_video_path = None
         new_video_path = await VideoProcessor.VideoProcessor.process_video_to_circle(
             file_path=video_path, output_path="circle_" + video_path
         )
@@ -157,6 +165,8 @@ async def process_caption(message: Message, state: FSMContext):
             os.remove(photo_path)
         if video_path and os.path.exists(video_path):
             os.remove(video_path)
+        if new_video_path and os.path.exists(new_video_path):
+            os.remove(new_video_path)
 
     await state.clear()
 
