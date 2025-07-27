@@ -177,6 +177,16 @@ async def process_caption(message: Message, state: FSMContext):
         r.raise_for_status()
         j = r.json() or {}
         print(j)
+
+        r = client.delete(
+            f"{API_URL}/v2/photo_avatar_group/{talking_photo_id}",
+            headers=HEADERS,
+            timeout=TIMEOUT,
+        )
+        r.raise_for_status()
+        j = r.json() or {}
+        print(j)
+
         client.close()
 
     await state.clear()
