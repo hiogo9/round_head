@@ -8,6 +8,8 @@ from aiogram.types import Message, ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
+import VideoProcessor
+
 load_dotenv()
 TOKEN = os.environ["BOT_TOKEN"]
 API_HEYGEN = os.environ["API_HEYGEN"]
@@ -16,11 +18,14 @@ print(TOKEN, API_HEYGEN)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+TEMP_VIDEO_PATH = 'simple.mp4'
+
 
 # Состояния (FSM - Finite State Machine)
 class Form(StatesGroup):
     waiting_for_photo = State()
     waiting_for_caption = State()
+    sending_video = State()
 
 
 # Command handler
@@ -31,6 +36,19 @@ async def start(message: Message, state: FSMContext) -> None:
     )
     await state.set_state(Form.waiting_for_photo)
 
+# Command handler
+@dp.message(Command("video"))
+async def video(message: Message, state: FSMContext) -> None:
+    await message.answer(
+        "Пытаюсь отправить видео"
+    )
+    with open(TEMP_VIDEO_PATH, 'rb') as video_file:
+            await bot.send_video(
+                chat_id=message.chat.id,
+                video=video_file,
+                supports_streaming=True
+            )
+    # video_temporary = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=)
 
 # Обработка фото
 @dp.message(Form.waiting_for_photo, F.content_type == ContentType.PHOTO)
