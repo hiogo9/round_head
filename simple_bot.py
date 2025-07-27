@@ -4,7 +4,7 @@ import logging
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import Message, ContentType
+from aiogram.types import Message, ContentType, BufferedInputFile, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
@@ -43,9 +43,13 @@ async def video(message: Message, state: FSMContext) -> None:
         "Пытаюсь отправить видео"
     )
     with open(TEMP_VIDEO_PATH, 'rb') as video_file:
+            input_file = BufferedInputFile(
+                file=video_file.read(),
+                filename="circular_video.webm"
+            )
             await bot.send_video(
                 chat_id=message.chat.id,
-                video=types.InputFile(video_file),
+                video=input_file,
                 supports_streaming=True
             )
     # video_temporary = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=)
