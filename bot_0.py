@@ -67,6 +67,7 @@ async def pick_ru_voice(client: httpx.AsyncClient) -> Optional[str]:
     resp = await client.get(f"{API_BASE}/v2/voices/locales", headers=HEADERS)
     resp.raise_for_status()
     j = resp.json() or {}
+    print(j)
     locales = (j.get("data") or {}).get("locales") or []
     ru_locales = {loc.get("locale") for loc in locales
                   if isinstance(loc, dict) and "ru" in (loc.get("locale") or "").lower()}
