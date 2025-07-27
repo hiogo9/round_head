@@ -20,14 +20,26 @@ class VideoProcessor:
             "-i",
             file_path,
             "-vf",
-            "scale=w='min(iw,ih)':h='min(iw,ih)',crop=w=ih:h=ih,scale=512:512",
+            (
+                # 1. Делаем квадрат
+                "scale=w='min(iw,ih)':h='min(iw,ih)',"
+                "crop=w=ih:h=ih,"
+                "scale=512:512,"
+                # 2. Создаем круглую маску
+                "format=rgba,"
+                "split[vid][alpha];"
+                "[alpha]geq=lum=0:cb=0:cr=0,"
+                "geq=a='if(gt(sqrt((X-256)^2+(Y-256)^2),256,255)',"
+                "curves=psfile='color_curves.acv'[mask];"
+                # 3. Накладываем маску
+                "[vid][mask]alphamerge"
+            ),
             "-c:v",
-            "libx264",
-            "-preset",
-            "fast",
-            "-crf",
-            "23",
-            "-y",  # Перезаписать, если файл существует
+            "libvpx-vp9",  # Кодек с поддержкой прозрачности
+            "-pix_fmt",
+            "yuva420p",  # Формат с альфа-каналом
+            "-auto-alt-ref",
+            "0",
             output_path,
         ]
 
