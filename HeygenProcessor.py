@@ -70,6 +70,7 @@ class HeygenProcessor:
             tp_id = js.get("talking_photo_id") if isinstance(js, dict) else None
         if not tp_id:
             raise HeygenError(f"No talking_photo_id in response: {js}")
+        print('talking_photo_id=',tp_id)
         return tp_id
 
     def create_video(

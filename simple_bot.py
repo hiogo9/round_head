@@ -113,6 +113,7 @@ async def process_caption(message: Message, state: FSMContext):
 
         # 1. Загружаем фото в Heygen
         mime = processor.guess_mime(Path(photo_path))
+        talking_photo_id= None
         talking_photo_id = processor.upload_talking_photo(
             client, Path(photo_path), mime
         )
@@ -167,6 +168,15 @@ async def process_caption(message: Message, state: FSMContext):
             os.remove(video_path)
         if new_video_path and os.path.exists(new_video_path):
             os.remove(new_video_path)
+        
+        r = client.post(
+            f"{API_URL}/v2/photo_avatar/{talking_photo_id}",
+            headers=HEADERS,
+            timeout=TIMEOUT,
+        )
+        r.raise_for_status()
+        j = r.json() or {}
+        print(j)
 
     await state.clear()
 
