@@ -126,9 +126,11 @@ async def process_caption(message: Message, state: FSMContext):
         )
 
         # 3. Ждем и скачиваем результат
-        video_path = f"result_{photo_id}.mp4"
-        processor.wait_and_download(client, video_id, Path(video_path))
 
+        video_path = f"result_{photo_id}.mp4"
+        print(video_path)
+        processor.wait_and_download(client, video_id, Path(video_path))
+        print('loaded video')
         # Отправляем видео пользователю
         # with open(video_path, "rb") as video_file:
         #     video_data = video_file.read()
@@ -136,7 +138,7 @@ async def process_caption(message: Message, state: FSMContext):
         #     video=BufferedInputFile(video_data, filename="result.mp4")
         # )
         new_video_path = await VideoProcessor.VideoProcessor.process_video_to_circle(
-            file_path=TEMP_VIDEO_PATH, output_path="circle_" + TEMP_VIDEO_PATH
+            file_path=video_path, output_path="circle_" + video_path
         )
         with open(new_video_path, "rb") as video_file:
             input_file = BufferedInputFile(
