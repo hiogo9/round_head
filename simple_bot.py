@@ -169,7 +169,7 @@ async def process_caption(message: Message, state: FSMContext):
         if new_video_path and os.path.exists(new_video_path):
             os.remove(new_video_path)
         
-        r = client.post(
+        r = client.delete(
             f"{API_URL}/v2/photo_avatar/{talking_photo_id}",
             headers=HEADERS,
             timeout=TIMEOUT,
