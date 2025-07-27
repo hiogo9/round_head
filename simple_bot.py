@@ -45,7 +45,7 @@ async def video(message: Message, state: FSMContext) -> None:
     with open(TEMP_VIDEO_PATH, 'rb') as video_file:
             await bot.send_video(
                 chat_id=message.chat.id,
-                video=video_file,
+                video=types.InputFile(video_file),
                 supports_streaming=True
             )
     # video_temporary = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=)
