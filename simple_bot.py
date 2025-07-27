@@ -37,7 +37,7 @@ async def start(message: Message, state: FSMContext) -> None:
     await state.set_state(Form.waiting_for_photo)
 
 
-# Command handler
+# Video handler
 @dp.message(Command("video"))
 async def video(message: Message, state: FSMContext) -> None:
     await message.answer("Пытаюсь отправить видео")
@@ -50,7 +50,20 @@ async def video(message: Message, state: FSMContext) -> None:
             video_note=input_file
         )
     # video_temporary = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=)
-
+# Video handler
+@dp.message(Command("circle_video"))
+async def video(message: Message, state: FSMContext) -> None:
+    await message.answer("Пытаюсь отправить круглое видео")
+    with open(TEMP_VIDEO_PATH, "rb") as video_file:
+        input_file = BufferedInputFile(
+            file=video_file.read(), filename="circular_video.mp4"
+        )
+        # await message.answer("Обрезаю старое")
+        new_video_path = await VideoProcessor.VideoProcessor.process_video_to_circle(file_path=TEMP_VIDEO_PATH, output_path="circle_"+TEMP_VIDEO_PATH)
+        await bot.send_video_note(
+            chat_id=message.chat.id,
+            video_note=new_video_path
+        )
 
 # Обработка фото
 @dp.message(Form.waiting_for_photo, F.content_type == ContentType.PHOTO)
