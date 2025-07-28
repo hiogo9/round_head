@@ -39,7 +39,7 @@ class Form(StatesGroup):
 @dp.message(Command("start"))
 async def start(message: Message, state: FSMContext) -> None:
     await message.answer(
-        "Привет, это Андрей. Отправь мне своё фото, чтобы найти себя в прошмандовках Азербайджана"
+        "Привет. Отправь мне фото, чтобы сгенерировать кружочек с голосом"
     )
     await state.set_state(Form.waiting_for_photo)
 
